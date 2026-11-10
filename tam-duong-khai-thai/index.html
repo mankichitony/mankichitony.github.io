@@ -885,11 +885,11 @@
           </form>
 
           <div class="order-done" id="orderDone" aria-live="polite">
-            <h3>Đã tạo đơn — tải file hoặc sao chép để gửi cho shop</h3>
+            <h3 id="orderDoneTitle">Đơn đã gửi tới shop — shop sẽ gọi lại xác nhận</h3>
             <pre id="orderText"></pre>
             <button class="btn-copy" id="btnCopy" type="button">Sao chép thông tin đặt hàng</button>
             <button class="btn-download" id="btnDownload" type="button">Tải file đơn hàng (.txt)</button>
-            <p class="copy-note">Bấm “Tải file đơn hàng” để lưu đơn này thành file .txt trên máy/điện thoại của bạn — shop dùng file đó để gọi điện xác nhận và chăm sóc, gửi đơn. Danh sách đơn bên dưới chỉ có trong lúc trang đang mở; hãy tải file về để lưu lâu dài. Trang này không tự gửi dữ liệu đi — bạn gửi file hoặc dán nội dung vào tin nhắn/Zalo của shop, shop sẽ gọi lại để xác nhận trước khi giao.</p>
+            <p class="copy-note">Đơn của bạn đã được gửi tới shop, shop sẽ gọi điện xác nhận trước khi giao hàng. Nút sao chép / tải file bên dưới chỉ là bản lưu dự phòng cho bạn.</p>
             <div class="orders-wrap" id="ordersWrap">
               <h4>Danh sách đơn đã tạo trong phiên này</h4>
               <div id="ordersList"></div>
@@ -1093,6 +1093,38 @@
           var timeStr = pad(now.getDate()) + "/" + pad(now.getMonth() + 1) + "/" + now.getFullYear() + " " + pad(now.getHours()) + ":" + pad(now.getMinutes());
           var order = { name: name, phone: phone, address: address, note: note, qty: qty, time: timeStr };
           orders.push(order);
+          // Gửi đơn về email shop qua FormSubmit (miễn phí, không cần đăng ký).
+          // Không chặn giao diện: khách vẫn thấy màn hình thành công ngay.
+          // Nếu gửi lỗi (mất mạng / FormSubmit lỗi), đổi tiêu đề để khách tự sao chép gửi shop.
+          try {
+            fetch("https://formsubmit.co/ajax/paybacktime0106@gmail.com", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Accept": "application/json" },
+              body: JSON.stringify({
+                "Họ và tên": name,
+                "Số điện thoại": phone,
+                "Địa chỉ": address,
+                "Số lượng": qty + " thẻ",
+                "Tổng tiền sản phẩm": fmt(PRICE * qty),
+                "Quà tặng": giftText(qty),
+                "Phí ship": shipText(qty),
+                "Tổng thanh toán": payText(qty) + " — thanh toán khi nhận hàng",
+                "Ghi chú": note || "(không có)",
+                "Thời gian đặt": timeStr,
+                "_subject": "Đơn mới Tam Dương Khai Thái — " + name + " (" + phone + ")",
+                "_template": "table",
+                "_captcha": "false"
+              })
+            }).then(function (r) { return r.json(); }).then(function (d) {
+              if (!d || (d.success !== "true" && d.success !== true)) { throw new Error("FormSubmit: " + JSON.stringify(d)); }
+            }).catch(function () {
+              var t = document.getElementById("orderDoneTitle");
+              if (t) { t.textContent = "Đã tạo đơn — mạng đang lỗi, vui lòng sao chép gửi shop giúp mình nhé"; }
+            });
+          } catch (err) {
+            var t2 = document.getElementById("orderDoneTitle");
+            if (t2) { t2.textContent = "Đã tạo đơn — mạng đang lỗi, vui lòng sao chép gửi shop giúp mình nhé"; }
+          }
           lastOrderText = buildOrderText(order);
           orderText.textContent = lastOrderText;
           done.classList.add("show");
