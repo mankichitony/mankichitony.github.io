@@ -244,28 +244,6 @@
       }
       .meta-row .meta-val{ font-weight:800; text-align:right; }
       .meta-row .free{ color:#7dff8a; }
-      .btn-download{
-        width:100%; margin-top:10px; background:#fff; color:var(--red-700);
-        border:2px solid var(--red-700); border-radius:999px; padding:12px 18px;
-        font:inherit; font-weight:800; font-size:15px; cursor:pointer;
-      }
-      .btn-download-all{
-        width:100%; margin-top:10px; background:var(--gold); color:#7a2d00;
-        border:none; border-radius:999px; padding:12px 18px;
-        font:inherit; font-weight:900; font-size:14.5px; cursor:pointer;
-      }
-      .orders-wrap{ margin-top:16px; display:none; }
-      .orders-wrap.show{ display:block; }
-      .orders-wrap h4{ margin:0 0 8px; font-size:14px; font-weight:800; color:var(--red-text); }
-      .order-item{
-        border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px;
-        background:#fffdf6; font-size:13.5px; line-height:1.55;
-      }
-      .order-item .oi-head{ display:flex; justify-content:space-between; gap:10px; font-weight:800; }
-      .order-item button{
-        margin-top:8px; background:var(--red-700); color:#fff; border:none; border-radius:999px;
-        padding:8px 14px; font:inherit; font-size:13px; font-weight:700; cursor:pointer;
-      }
       .qty-opt .qgift{ display:block; font-size:12.5px; font-weight:700; color:#7a2d00; }
 
       .btn-buy{
@@ -526,19 +504,6 @@
         border-radius:10px;
         padding:12px 14px;
       }
-      .btn-copy{
-        width:100%;
-        background:var(--red-700);
-        color:#fff;
-        border:none;
-        border-radius:999px;
-        padding:13px 18px;
-        font:inherit;
-        font-weight:800;
-        font-size:15px;
-        cursor:pointer;
-      }
-      .btn-copy:active{ background:var(--red-800); }
       .copy-note{ font-size:12.5px; color:var(--ink-soft); text-align:center; margin:10px 0 0; line-height:1.55; }
       .trust-row{
         display:flex; justify-content:center; gap:16px; flex-wrap:wrap;
@@ -887,14 +852,7 @@
           <div class="order-done" id="orderDone" aria-live="polite">
             <h3 id="orderDoneTitle">Đơn đã gửi tới shop — shop sẽ gọi lại xác nhận</h3>
             <pre id="orderText"></pre>
-            <button class="btn-copy" id="btnCopy" type="button">Sao chép thông tin đặt hàng</button>
-            <button class="btn-download" id="btnDownload" type="button">Tải file đơn hàng (.txt)</button>
-            <p class="copy-note">Đơn của bạn đã được gửi tới shop, shop sẽ gọi điện xác nhận trước khi giao hàng. Nút sao chép / tải file bên dưới chỉ là bản lưu dự phòng cho bạn.</p>
-            <div class="orders-wrap" id="ordersWrap">
-              <h4>Danh sách đơn đã tạo trong phiên này</h4>
-              <div id="ordersList"></div>
-              <button class="btn-download-all" id="btnDownloadAll" type="button">Tải tất cả đơn (.txt)</button>
-            </div>
+            <p class="copy-note">Đơn của bạn đã được gửi tới shop, shop sẽ gọi điện xác nhận trước khi giao hàng.</p>
           </div>
 
           <div class="trust-row">
@@ -978,13 +936,6 @@
         var payVal = document.getElementById("payVal");
         var done = document.getElementById("orderDone");
         var orderText = document.getElementById("orderText");
-        var btnCopy = document.getElementById("btnCopy");
-        var btnDownload = document.getElementById("btnDownload");
-        var btnDownloadAll = document.getElementById("btnDownloadAll");
-        var ordersWrap = document.getElementById("ordersWrap");
-        var ordersList = document.getElementById("ordersList");
-        var orders = [];
-        var lastOrderText = "";
 
         function getQty() {
           var checked = form.querySelector('input[name="qty"]:checked');
@@ -1031,45 +982,6 @@
           return lines.join("\n");
         }
 
-        function downloadTxt(filename, text){
-          var blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-          var url = URL.createObjectURL(blob);
-          var a = document.createElement("a");
-          a.href = url;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          setTimeout(function(){ URL.revokeObjectURL(url); }, 800);
-        }
-
-        function renderOrders(){
-          ordersList.innerHTML = "";
-          if (!orders.length) { ordersWrap.classList.remove("show"); return; }
-          ordersWrap.classList.add("show");
-          orders.forEach(function(o, idx){
-            var div = document.createElement("div");
-            div.className = "order-item";
-            var head = document.createElement("div");
-            head.className = "oi-head";
-            var left = document.createElement("span");
-            left.textContent = "Đơn " + (idx + 1) + " — " + o.name;
-            var right = document.createElement("span");
-            right.textContent = fmt(PRICE * o.qty);
-            head.appendChild(left); head.appendChild(right);
-            var detail = document.createElement("div");
-            detail.textContent = o.phone + " • " + o.qty + " thẻ • " + giftText(o.qty) + " • " + shipText(o.qty);
-            var btn = document.createElement("button");
-            btn.type = "button";
-            btn.textContent = "Tải file đơn này (.txt)";
-            btn.addEventListener("click", function(){
-              downloadTxt("don-tam-duong-" + (idx + 1) + "-" + o.phone + ".txt", buildOrderText(o));
-            });
-            div.appendChild(head); div.appendChild(detail); div.appendChild(btn);
-            ordersList.appendChild(div);
-          });
-        }
-
         form.addEventListener("submit", function (e) {
           e.preventDefault();
           var name = document.getElementById("inName").value.trim();
@@ -1092,10 +1004,9 @@
           var pad = function(n){ return (n < 10 ? "0" : "") + n; };
           var timeStr = pad(now.getDate()) + "/" + pad(now.getMonth() + 1) + "/" + now.getFullYear() + " " + pad(now.getHours()) + ":" + pad(now.getMinutes());
           var order = { name: name, phone: phone, address: address, note: note, qty: qty, time: timeStr };
-          orders.push(order);
           // Gửi đơn về email shop qua FormSubmit (miễn phí, không cần đăng ký).
           // Không chặn giao diện: khách vẫn thấy màn hình thành công ngay.
-          // Nếu gửi lỗi (mất mạng / FormSubmit lỗi), đổi tiêu đề để khách tự sao chép gửi shop.
+          // Nếu gửi lỗi (mất mạng / FormSubmit lỗi), đổi tiêu đề để khách đặt lại.
           try {
             fetch("https://formsubmit.co/ajax/paybacktime0106@gmail.com", {
               method: "POST",
@@ -1119,57 +1030,17 @@
               if (!d || (d.success !== "true" && d.success !== true)) { throw new Error("FormSubmit: " + JSON.stringify(d)); }
             }).catch(function () {
               var t = document.getElementById("orderDoneTitle");
-              if (t) { t.textContent = "Đã tạo đơn — mạng đang lỗi, vui lòng sao chép gửi shop giúp mình nhé"; }
+              if (t) { t.textContent = "Đã tạo đơn — mạng đang lỗi, vui lòng thử đặt lại giúp mình nhé"; }
             });
           } catch (err) {
             var t2 = document.getElementById("orderDoneTitle");
-            if (t2) { t2.textContent = "Đã tạo đơn — mạng đang lỗi, vui lòng sao chép gửi shop giúp mình nhé"; }
+            if (t2) { t2.textContent = "Đã tạo đơn — mạng đang lỗi, vui lòng thử đặt lại giúp mình nhé"; }
           }
-          lastOrderText = buildOrderText(order);
-          orderText.textContent = lastOrderText;
+          orderText.textContent = buildOrderText(order);
           done.classList.add("show");
-          btnCopy.textContent = "Sao chép thông tin đặt hàng";
-          if (btnDownload) btnDownload.textContent = "Tải file đơn hàng (.txt)";
-          renderOrders();
           done.scrollIntoView({ behavior: "smooth", block: "center" });
         });
 
-        if (btnDownload) {
-          btnDownload.addEventListener("click", function(){
-            if (!lastOrderText) return;
-            var last = orders[orders.length - 1];
-            var fname = last ? ("don-tam-duong-" + orders.length + "-" + last.phone + ".txt") : "don-tam-duong.txt";
-            downloadTxt(fname, lastOrderText);
-            btnDownload.textContent = "Đã tải file — kiểm tra thư mục tải xuống nhé!";
-          });
-        }
-        if (btnDownloadAll) {
-          btnDownloadAll.addEventListener("click", function(){
-            if (!orders.length) return;
-            var all = orders.map(function(o, i){ return "===== ĐƠN " + (i + 1) + " =====\n" + buildOrderText(o); }).join("\n\n");
-            downloadTxt("danh-sach-don-tam-duong.txt", all);
-          });
-        }
-
-        btnCopy.addEventListener("click", function () {
-          var text = orderText.textContent;
-          function copied() { btnCopy.textContent = "Đã sao chép — dán vào tin nhắn gửi shop nhé!"; }
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).then(copied, function () { fallback(); });
-          } else {
-            fallback();
-          }
-          function fallback() {
-            var ta = document.createElement("textarea");
-            ta.value = text;
-            ta.style.position = "fixed";
-            ta.style.opacity = "0";
-            document.body.appendChild(ta);
-            ta.select();
-            try { document.execCommand("copy"); copied(); } catch (err) { btnCopy.textContent = "Hãy bôi đen phần đơn ở trên để sao chép"; }
-            document.body.removeChild(ta);
-          }
-        });
       })();
     </script>
   </body>
